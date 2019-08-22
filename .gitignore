@@ -2,3 +2,4 @@ gradlew.bat
 .gradle/
 tokens/StoredCredential
 build/
+.idea/
