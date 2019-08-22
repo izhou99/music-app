@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.api.client.util.store.MemoryDataStoreFactory.getDefaultInstance;
+
 public class SpotifyAppClient extends MusicAppClient {
     private SpotifyApi spotifyApi;
     /** OAuth 2 scope. */
@@ -64,7 +66,7 @@ public class SpotifyAppClient extends MusicAppClient {
                         new ClientParametersAuthentication(clientId, clientSecret),
                         clientId,
                         AUTH_SERVER)
-                        .setDataStoreFactory(new FileDataStoreFactory(new File(System.getProperty("user.dir"))))
+                        .setDataStoreFactory(getDefaultInstance())
                         .setScopes(scopes)
                         .build();
 
