@@ -1,1 +1,4 @@
 gradlew.bat
+.gradle/
+StoredCredential
+build/
