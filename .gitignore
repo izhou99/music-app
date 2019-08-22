@@ -1,4 +1,4 @@
 gradlew.bat
 .gradle/
-StoredCredential
+tokens/StoredCredential
 build/

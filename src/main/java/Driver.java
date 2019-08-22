@@ -29,7 +29,6 @@ import java.util.Map;
 
 public class Driver {
 
-
   public static void main(String[] args) throws IOException, SpotifyWebApiException {
     MusicAppClient musicAppClient = SpotifyAppClient.getSpotifyAppClient();
     musicAppClient.getPlaylist("riverdale");
