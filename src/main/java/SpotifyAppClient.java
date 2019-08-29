@@ -9,20 +9,16 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.common.collect.ImmutableList;
 import com.wrapper.spotify.SpotifyApi;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
-import com.wrapper.spotify.model_objects.specification.Paging;
-import com.wrapper.spotify.model_objects.specification.PlaylistSimplified;
-import com.wrapper.spotify.model_objects.specification.PlaylistTrack;
-import com.wrapper.spotify.model_objects.specification.User;
+import com.wrapper.spotify.model_objects.specification.*;
 import com.wrapper.spotify.requests.data.playlists.GetListOfUsersPlaylistsRequest;
 import com.wrapper.spotify.requests.data.playlists.GetPlaylistsTracksRequest;
 import com.wrapper.spotify.requests.data.users_profile.GetCurrentUsersProfileRequest;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,7 +76,7 @@ public class SpotifyAppClient extends MusicAppClient {
     }
 
     @Override
-    Map<String, String> getPlaylist(String playlist) throws IOException, SpotifyWebApiException {
+    List<Song> getPlaylist(String playlist) throws IOException, SpotifyWebApiException {
         // Gets current user name
         GetCurrentUsersProfileRequest getCurrentUsersProfileRequest = spotifyApi.getCurrentUsersProfile()
                 .build();
@@ -105,10 +101,18 @@ public class SpotifyAppClient extends MusicAppClient {
                 .build();
         Paging<PlaylistTrack> playlistTrackPaging = getPlaylistsTracksRequest.execute();
         PlaylistTrack[] tracks = playlistTrackPaging.getItems();
-        Map<String, String> trackNameToId = new HashMap<>();
+        List<Song> songs = new ArrayList<>();
         for (PlaylistTrack item: tracks) {
-            trackNameToId.put(item.getTrack().getName(),item.getTrack().getId());
+            songs.add(new Song(item.getTrack().getName(), item.getTrack().getId(), convertArtists(item.getTrack().getArtists())));
         }
-        return trackNameToId;
+        return songs;
+    }
+
+    private List<String> convertArtists(ArtistSimplified[] original) {
+       List<String> artists = new ArrayList<>();
+       for (ArtistSimplified artist : original) {
+           artists.add(artist.getName());
+       }
+       return artists;
     }
 }
