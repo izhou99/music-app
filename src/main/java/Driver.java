@@ -31,6 +31,6 @@ public class Driver {
 
   public static void main(String[] args) throws IOException, SpotifyWebApiException {
     MusicAppClient musicAppClient = SpotifyAppClient.getSpotifyAppClient();
-    musicAppClient.getPlaylist("riverdale");
+    System.out.print(musicAppClient.getPlaylist("Lucio jams"));
   }
 }
