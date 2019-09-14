@@ -27,9 +27,10 @@ public abstract class MusicAppClient {
             processedSongs.add(song);
         }
 
-
         return songsToDelete;
     }
 
     abstract List<Song> getPlaylist(String playlist) throws IOException, SpotifyWebApiException;
+
+    abstract void removeTrackFromPlaylist(List<Song> songsToDelete) throws IOException, SpotifyWebApiException;
 }
