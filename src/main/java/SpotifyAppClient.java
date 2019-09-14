@@ -10,11 +10,19 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.common.collect.ImmutableList;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
 import com.wrapper.spotify.SpotifyApi;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
-import com.wrapper.spotify.model_objects.specification.*;
+import com.wrapper.spotify.model_objects.special.SnapshotResult;
+import com.wrapper.spotify.model_objects.specification.ArtistSimplified;
+import com.wrapper.spotify.model_objects.specification.Paging;
+import com.wrapper.spotify.model_objects.specification.PlaylistSimplified;
+import com.wrapper.spotify.model_objects.specification.PlaylistTrack;
+import com.wrapper.spotify.model_objects.specification.User;
 import com.wrapper.spotify.requests.data.playlists.GetListOfUsersPlaylistsRequest;
 import com.wrapper.spotify.requests.data.playlists.GetPlaylistsTracksRequest;
+import com.wrapper.spotify.requests.data.playlists.RemoveTracksFromPlaylistRequest;
 import com.wrapper.spotify.requests.data.users_profile.GetCurrentUsersProfileRequest;
 
 import java.io.IOException;
@@ -27,13 +35,19 @@ import static com.google.api.client.util.store.MemoryDataStoreFactory.getDefault
 
 public class SpotifyAppClient extends MusicAppClient {
     private SpotifyApi spotifyApi;
-    /** OAuth 2 scope. */
+    /**
+     * OAuth 2 scope.
+     */
     private static final String SCOPE = "read";
 
-    /** Global instance of the HTTP transport. */
+    /**
+     * Global instance of the HTTP transport.
+     */
     private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 
-    /** Global instance of the JSON factory. */
+    /**
+     * Global instance of the JSON factory.
+     */
     static final JsonFactory JSON_FACTORY = new JacksonFactory();
 
     public static final String SPOTIFY_ID = "SPOTIFY_ID";
@@ -45,11 +59,11 @@ public class SpotifyAppClient extends MusicAppClient {
     public static final String SPOTIFY_SECRET = "SPOTIFY_SECRET";
     private static final String TOKEN_SERVER = "https://accounts.spotify.com/api/token";
     private static final String AUTH_SERVER = "https://accounts.spotify.com/authorize";
-    private static final List<String> scopes = ImmutableList.of("user-read-private", "playlist-read-private","playlist-read-collaborative","user-top-read");
+    private static final List<String> scopes = ImmutableList.of("playlist-modify-public","user-read-private", "playlist-read-private", "playlist-read-collaborative", "user-top-read");
     private static final String LOCALHOST = "localhost";
     private static final int PORT = 8888;
 
-   public static MusicAppClient getSpotifyAppClient() throws IOException {
+    public static MusicAppClient getSpotifyAppClient() throws IOException {
         String clientId = System.getenv(SPOTIFY_ID);
         String clientSecret = System.getenv(SPOTIFY_SECRET);
 
@@ -91,8 +105,8 @@ public class SpotifyAppClient extends MusicAppClient {
         Paging<PlaylistSimplified> playlistSimplifiedPaging = getListOfUsersPlaylistsRequest.execute();
         PlaylistSimplified[] items = playlistSimplifiedPaging.getItems();
         Map<String, String> playlistNameToId = new HashMap<>();
-        for (PlaylistSimplified item: items) {
-            playlistNameToId.put(item.getName().toLowerCase(),item.getId());
+        for (PlaylistSimplified item : items) {
+            playlistNameToId.put(item.getName().toLowerCase(), item.getId());
         }
         System.out.println(playlistNameToId);
         String playlistId = playlistNameToId.get(playlist.toLowerCase());
@@ -102,17 +116,38 @@ public class SpotifyAppClient extends MusicAppClient {
         Paging<PlaylistTrack> playlistTrackPaging = getPlaylistsTracksRequest.execute();
         PlaylistTrack[] tracks = playlistTrackPaging.getItems();
         List<Song> songs = new ArrayList<>();
-        for (PlaylistTrack item: tracks) {
-            songs.add(new Song(item.getTrack().getName(), item.getTrack().getId(), convertArtists(item.getTrack().getArtists())));
+        for (PlaylistTrack item : tracks) {
+            songs.add(new Song(item.getTrack().getName(), item.getTrack().getId(), convertArtists(item.getTrack().getArtists()), playlistId));
         }
         return songs;
     }
 
     private List<String> convertArtists(ArtistSimplified[] original) {
-       List<String> artists = new ArrayList<>();
-       for (ArtistSimplified artist : original) {
-           artists.add(artist.getName());
-       }
-       return artists;
+        List<String> artists = new ArrayList<>();
+        for (ArtistSimplified artist : original) {
+            artists.add(artist.getName());
+        }
+        return artists;
+    }
+
+    @Override
+    void removeTrackFromPlaylist(List<Song> songsToDelete) throws IOException, SpotifyWebApiException {
+        // correctly removes the song from the playlist.
+        // TODO: the same song with the same track ID can be added multiple times in the same playlist
+        // this function will remove both tracks. next step is to remove duplicates but keep one song
+        JsonParser parser = new JsonParser();
+        JsonArray tracks = new JsonArray();
+        for (Song song: songsToDelete) {
+            String url = String.format("[{\"uri\":\"spotify:track:%s\"}]", song.getId());
+            tracks.addAll(parser.parse(url).getAsJsonArray());
+        }
+
+        if (!tracks.isJsonNull() && !songsToDelete.get(0).getPlaylistId().isEmpty()) {
+            RemoveTracksFromPlaylistRequest removeTracksFromPlaylistRequest = spotifyApi
+                    .removeTracksFromPlaylist(songsToDelete.get(0).getPlaylistId(), tracks)
+                    .build();
+            SnapshotResult snapshotResult = removeTracksFromPlaylistRequest.execute();
+            System.out.println("Snapshot ID: " + snapshotResult.getSnapshotId());
+        }
     }
 }

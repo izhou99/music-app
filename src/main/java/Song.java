@@ -5,15 +5,17 @@ public class Song {
     private String name;
     private String id;
     private List<String> artists;
+    private String playlistId;
 
-    public Song(String name, String id, List<String> artists) {
+    public Song(String name, String id, List<String> artists, String playlistId) {
         this.name = name;
         this.id = id;
         this.artists = artists;
+        this.playlistId = playlistId;
     }
 
     public String toString() {
-        return String.format("Song: %s, Id: %s Artists: %s\n", name, id, artists);
+        return String.format("Song: %s, Id: %s Artists: %s PlayList ID: %s\n", name, id, artists, playlistId);
     }
 
     public String getName() {
@@ -38,6 +40,14 @@ public class Song {
 
     public void setArtists(List<String> artists) {
         this.artists = artists;
+    }
+
+    public String getPlaylistId() {
+        return playlistId;
+    }
+
+    public void setPlaylistId(String playlistId) {
+        this.playlistId = playlistId;
     }
 
     public boolean isRepeat(Song song) {
